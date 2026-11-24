@@ -1,5 +1,6 @@
 package kz.airport;
 
+/** Эконом салонға арналған билет; Ticket әдісін қайта анықтайды. */
 public class EconomyTicket extends Ticket {
 
     public EconomyTicket(String ticketNumber, Booking booking) {

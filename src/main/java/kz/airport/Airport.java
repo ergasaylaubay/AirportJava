@@ -1,14 +1,15 @@
 package kz.airport;
 
+/** Әуежайдың коды, атауы және қаласы. */
 public class Airport {
-    private String code;
-    private String name;
-    private String city;
+    private final String code;
+    private final String name;
+    private final String city;
 
     public Airport(String code, String name, String city) {
-        this.code = code;
-        this.name = name;
-        this.city = city;
+        this.code = Validation.requiredText(code, "Әуежай коды");
+        this.name = Validation.requiredText(name, "Әуежай атауы");
+        this.city = Validation.requiredText(city, "Қала");
     }
 
     public String getCode() {

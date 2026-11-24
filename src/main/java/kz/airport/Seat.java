@@ -1,13 +1,14 @@
 package kz.airport;
 
+/** Рейстегі физикалық орын және тіркелуден кейінгі бос/бос емес күйі. */
 public class Seat {
-    private String seatNumber;
-    private String cabinClass;
+    private final String seatNumber;
+    private final String cabinClass;
     private boolean occupied;
 
     public Seat(String seatNumber, String cabinClass) {
-        this.seatNumber = seatNumber;
-        this.cabinClass = cabinClass;
+        this.seatNumber = Validation.requiredText(seatNumber, "Орын нөмірі");
+        this.cabinClass = Validation.requiredText(cabinClass, "Салон класы");
         this.occupied = false;
     }
 

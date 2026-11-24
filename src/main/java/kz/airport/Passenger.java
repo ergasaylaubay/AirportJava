@@ -1,19 +1,20 @@
 package kz.airport;
 
+/** Жолаушы деректері; email форматы емес, тек бос еместігі тексеріледі. */
 public class Passenger {
-    private String passengerId;
-    private String firstName;
-    private String lastName;
+    private final String passengerId;
+    private final String firstName;
+    private final String lastName;
     private String email;
 
     public Passenger(String passengerId,
                      String firstName,
                      String lastName,
                      String email) {
-        this.passengerId = passengerId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
+        this.passengerId = Validation.requiredText(passengerId, "Жолаушы ID");
+        this.firstName = Validation.requiredText(firstName, "Аты");
+        this.lastName = Validation.requiredText(lastName, "Тегі");
+        this.email = Validation.requiredText(email, "Email");
     }
 
     public String getPassengerId() {
@@ -33,8 +34,9 @@ public class Passenger {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = Validation.requiredText(email, "Email");
     }
+
     public String getFirstName() {
         return firstName;
     }

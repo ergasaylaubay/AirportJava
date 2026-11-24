@@ -2,9 +2,10 @@ package kz.airport;
 
 import java.time.LocalDateTime;
 
+/** Төленген броньға берілетін билеттердің ортақ абстракт негізі. */
 public abstract class Ticket {
-    private String ticketNumber;
-    private Booking booking;
+    private final String ticketNumber;
+    private final Booking booking;
     private LocalDateTime issuedAt;
 
     public Ticket(String ticketNumber, Booking booking) {
@@ -20,7 +21,7 @@ public abstract class Ticket {
             );
         }
 
-        if (!"CONFIRMED".equals(booking.getStatus())) {
+        if (!Booking.CONFIRMED.equals(booking.getStatus())) {
             throw new BookingException(
                     "Билет шығару үшін төлем расталуы керек."
             );

@@ -2,23 +2,24 @@ package kz.airport;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+/** JSON v1 сақтау және объектілер арасындағы байланысты қалпына келтіру. */
 public class JsonStorage {
+    private static final int FORMAT_VERSION = 1;
     private final Path filePath;
     private final Gson gson;
 
@@ -29,6 +30,7 @@ public class JsonStorage {
                 .create();
     }
 
+    /** Алдымен уақытша файлға жазу негізгі файлды жазу қатесінен қорғайды. */
     public void save(JsonObject data) {
         if (data == null) {
             throw new BookingException(
@@ -60,7 +62,7 @@ public class JsonStorage {
             );
         } catch (IOException e) {
             throw new BookingException(
-                    "Файлға сақтау қатесі: " + e.getMessage()
+                    "Файлға сақтау қатесі: " + e.getMessage(), e
             );
         } finally {
             if (temporaryFile != null) {
@@ -87,7 +89,7 @@ public class JsonStorage {
             );
         } catch (IOException e) {
             throw new BookingException(
-                    "Файлды оқу қатесі: " + e.getMessage()
+                    "Файлды оқу қатесі: " + e.getMessage(), e
             );
         }
 
@@ -95,16 +97,17 @@ public class JsonStorage {
             return JsonParser.parseString(json).getAsJsonObject();
         } catch (RuntimeException e) {
             throw new BookingException(
-                    "Файлдағы JSON деректерінің пішімі дұрыс емес."
+                    "Файлдағы JSON деректерінің пішімі дұрыс емес.", e
             );
         }
     }
+
     public void saveState(List<Flight> flights,
                           List<Fare> fares,
                           BookingService service) {
 
         JsonObject root = new JsonObject();
-        root.addProperty("version", 1);
+        root.addProperty("version", FORMAT_VERSION);
 
         JsonArray flightArray = new JsonArray();
 
@@ -184,18 +187,10 @@ public class JsonStorage {
                 );
             }
 
-            for (Ticket ticket : service.getTickets()) {
-                if (ticket.getBooking() == booking) {
-                    bookingJson.addProperty(
-                            "ticketNumber", ticket.getTicketNumber()
-                    );
-
-                    bookingJson.addProperty(
-                            "issuedAt", ticket.getIssuedAt().toString()
-                    );
-
-                    break;
-                }
+            Ticket ticket = service.findTicket(booking);
+            if (ticket != null) {
+                bookingJson.addProperty("ticketNumber", ticket.getTicketNumber());
+                bookingJson.addProperty("issuedAt", ticket.getIssuedAt().toString());
             }
 
             bookingArray.add(bookingJson);
@@ -205,6 +200,8 @@ public class JsonStorage {
 
         save(root);
     }
+
+    /** Жүктеу толық сәтті болса ғана берілген тізімдерді ауыстырады. */
     public BookingService loadState(List<Flight> flights,
                                     List<Fare> fares) {
 
@@ -215,7 +212,7 @@ public class JsonStorage {
         try {
             JsonObject root = load();
 
-            if (root.get("version").getAsInt() != 1) {
+            if (root.get("version").getAsInt() != FORMAT_VERSION) {
                 throw new BookingException(
                         "Файл нұсқасы бұл бағдарламаға сәйкес келмейді."
                 );
@@ -348,7 +345,7 @@ public class JsonStorage {
         } catch (RuntimeException e) {
             throw new BookingException(
                     "Файл құрылымы немесе ішіндегі деректер дұрыс емес: "
-                            + e.getMessage()
+                            + e.getMessage(), e
             );
         }
     }

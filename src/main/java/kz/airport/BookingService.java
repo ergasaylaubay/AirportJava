@@ -1,17 +1,19 @@
 package kz.airport;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.time.LocalDateTime;
 
+/** Броньдарды код бойынша сақтап, сыйымдылық пен төлем ережелерін орындайды. */
 public class BookingService {
-    private Map<String, Booking> bookings = new HashMap<>();
-    private List<Ticket> tickets = new ArrayList<>();
-    private FareCalculator fareCalculator;
+    private final Map<String, Booking> bookings = new HashMap<>();
+    private final List<Ticket> tickets = new ArrayList<>();
+    private final FareCalculator fareCalculator;
 
     public BookingService(FareCalculator fareCalculator) {
         if (fareCalculator == null) {
@@ -32,6 +34,11 @@ public class BookingService {
             throw new BookingException(
                     "Жолаушы, рейс және тариф көрсетілуі керек."
             );
+        }
+
+        // Ереже мәзірден тыс шақырылғанда да орындалады. Ескі броньды оқу бөлек.
+        if (!flight.getDepartureTime().isAfter(LocalDateTime.now())) {
+            throw new BookingException("Ұшу уақыты өтіп кеткен рейске бронь жасауға болмайды.");
         }
 
         String cabinClass = fare.getCabinClass();
@@ -63,7 +70,7 @@ public class BookingService {
 
         do {
             bookingCode = UUID.randomUUID().toString()
-                    .substring(0, 8).toUpperCase();
+                    .substring(0, 8).toUpperCase(Locale.ROOT);
         } while (bookings.containsKey(bookingCode));
 
         Booking booking = new Booking(
@@ -79,6 +86,7 @@ public class BookingService {
         return booking;
     }
 
+    /** Белсенді бронь орынды резервтейді; CHECKED_IN орнын екінші рет шегермейміз. */
     public int getRemainingCapacity(Flight flight, String cabinClass) {
         if (flight == null || cabinClass == null) {
             throw new BookingException(
@@ -104,7 +112,7 @@ public class BookingService {
                     booking.getFare().getCabinClass()
             );
 
-            boolean active = !"CANCELLED".equals(
+            boolean active = !Booking.CANCELLED.equals(
                     booking.getStatus()
             );
 
@@ -119,7 +127,7 @@ public class BookingService {
     public Ticket confirmPayment(Booking booking) {
         requireManagedBooking(booking);
 
-        if (!"CREATED".equals(booking.getStatus())) {
+        if (!Booking.CREATED.equals(booking.getStatus())) {
             throw new BookingException(
                     "Тек жаңа броньның төлемін растауға болады."
             );
@@ -135,13 +143,7 @@ public class BookingService {
         booking.confirm();
 
         String ticketNumber = "T-" + booking.getBookingCode();
-        Ticket ticket;
-
-        if ("Economy".equalsIgnoreCase(cabinClass)) {
-            ticket = new EconomyTicket(ticketNumber, booking);
-        } else {
-            ticket = new BusinessTicket(ticketNumber, booking);
-        }
+        Ticket ticket = createTicket(ticketNumber, booking);
 
         tickets.add(ticket);
         return ticket;
@@ -154,7 +156,7 @@ public class BookingService {
             );
         }
 
-        Booking booking = bookings.get(code.trim().toUpperCase());
+        Booking booking = bookings.get(code.trim().toUpperCase(Locale.ROOT));
 
         if (booking == null
                 || !lastName.trim().equalsIgnoreCase(
@@ -185,6 +187,24 @@ public class BookingService {
         return List.copyOf(tickets);
     }
 
+    /** Бір броньға сәйкес билет; жоқ болса null (төлем әлі расталмаған). */
+    public Ticket findTicket(Booking booking) {
+        requireManagedBooking(booking);
+        for (Ticket ticket : tickets) {
+            if (ticket.getBooking() == booking) {
+                return ticket;
+            }
+        }
+        return null;
+    }
+
+    private Ticket createTicket(String ticketNumber, Booking booking) {
+        if ("Economy".equalsIgnoreCase(booking.getFare().getCabinClass())) {
+            return new EconomyTicket(ticketNumber, booking);
+        }
+        return new BusinessTicket(ticketNumber, booking);
+    }
+
     private void requireManagedBooking(Booking booking) {
         if (booking == null
                 || bookings.get(booking.getBookingCode()) != booking) {
@@ -193,6 +213,10 @@ public class BookingService {
             );
         }
     }
+
+    /** JSON-нан бастапқы кодты, бағаны және билет уақытын сақтап қалпына келтіреді.
+     * Өткен рейстердің тарихи броньдарын да оқуға рұқсат етіледі.
+     */
     public void restoreBooking(String code,
                                Passenger passenger,
                                Flight flight,
@@ -208,7 +232,7 @@ public class BookingService {
             throw new BookingException("Сақталған бронь коды бос.");
         }
 
-        code = code.trim().toUpperCase();
+        code = code.trim().toUpperCase(Locale.ROOT);
 
         if (bookings.containsKey(code)) {
             throw new BookingException(
@@ -216,11 +240,11 @@ public class BookingService {
             );
         }
 
-        boolean paid = "CONFIRMED".equals(status)
-                || "CHECKED_IN".equals(status);
+        boolean paid = Booking.CONFIRMED.equals(status)
+                || Booking.CHECKED_IN.equals(status);
 
-        if (!"CREATED".equals(status)
-                && !"CANCELLED".equals(status)
+        if (!Booking.CREATED.equals(status)
+                && !Booking.CANCELLED.equals(status)
                 && !paid) {
             throw new BookingException(
                     "Файлда белгісіз бронь күйі бар: " + status
@@ -239,14 +263,14 @@ public class BookingService {
             throw new BookingException("Файлдағы салон класы дұрыс емес.");
         }
 
-        if (!"CANCELLED".equals(status)
+        if (!Booking.CANCELLED.equals(status)
                 && getRemainingCapacity(flight, cabinClass) <= 0) {
             throw new BookingException(
                     "Сақталған броньдар саны рейс сыйымдылығынан артық."
             );
         }
 
-        if (!"CHECKED_IN".equals(status) && seatNumber != null) {
+        if (!Booking.CHECKED_IN.equals(status) && seatNumber != null) {
             throw new BookingException(
                     "Тіркелмеген броньға орын бекітілмеуі керек."
             );
@@ -278,20 +302,16 @@ public class BookingService {
 
             booking.confirm();
 
-            if ("Economy".equalsIgnoreCase(cabinClass)) {
-                ticket = new EconomyTicket(ticketNumber, booking);
-            } else {
-                ticket = new BusinessTicket(ticketNumber, booking);
-            }
+            ticket = createTicket(ticketNumber, booking);
 
             ticket.restoreIssuedAt(issuedAt);
         }
 
-        if ("CANCELLED".equals(status)) {
+        if (Booking.CANCELLED.equals(status)) {
             booking.cancel();
         }
 
-        if ("CHECKED_IN".equals(status)) {
+        if (Booking.CHECKED_IN.equals(status)) {
             Seat selectedSeat = null;
 
             for (Seat seat : flight.getSeats()) {

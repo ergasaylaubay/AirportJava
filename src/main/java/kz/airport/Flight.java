@@ -4,24 +4,25 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Рейс кестесі мен орындар; броньға қолжетімді санды BookingService есептейді. */
 public class Flight {
-    private String flightId;
+    private final String flightId;
     private String flightNumber;
-    private Airport departureAirport;
-    private Airport arrivalAirport;
+    private final Airport departureAirport;
+    private final Airport arrivalAirport;
     private LocalDateTime departureTime;
-    private List<Seat> seats;
+    private final List<Seat> seats;
 
     public Flight(String flightId,
                   String flightNumber,
                   Airport departureAirport,
                   Airport arrivalAirport,
                   LocalDateTime departureTime) {
-        this.flightId = flightId;
-        this.flightNumber = flightNumber;
-        this.departureAirport = departureAirport;
-        this.arrivalAirport = arrivalAirport;
-        this.departureTime = departureTime;
+        this.flightId = Validation.requiredText(flightId, "Рейс ID");
+        this.flightNumber = Validation.requiredText(flightNumber, "Рейс нөмірі");
+        this.departureAirport = java.util.Objects.requireNonNull(departureAirport, "departureAirport");
+        this.arrivalAirport = java.util.Objects.requireNonNull(arrivalAirport, "arrivalAirport");
+        this.departureTime = java.util.Objects.requireNonNull(departureTime, "departureTime");
         this.seats = new ArrayList<>();
     }
 
@@ -82,6 +83,7 @@ public class Flight {
     public boolean hasAvailableSeats(String cabinClass) {
         return getAvailableSeats(cabinClass) > 0;
     }
+
     public void updateDetails(String flightNumber,
                               LocalDateTime departureTime) {
         if (flightNumber == null || flightNumber.isBlank()
@@ -92,6 +94,6 @@ public class Flight {
         }
 
         this.flightNumber = flightNumber.trim();
-        this.departureTime = departureTime;
+        this.departureTime = java.util.Objects.requireNonNull(departureTime, "departureTime");
     }
 }

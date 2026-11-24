@@ -2,13 +2,14 @@ package kz.airport;
 
 import java.math.BigDecimal;
 
+/** Тариф бағасы, кіретін багаж және қосымша багаж бағасы. */
 public class Fare {
-    private String fareName;
-    private String cabinClass;
-    private BigDecimal basePrice;
-    private int baggagePieces;
-    private int baggageWeightPerPiece;
-    private BigDecimal extraBaggagePrice;
+    private final String fareName;
+    private final String cabinClass;
+    private final BigDecimal basePrice;
+    private final int baggagePieces;
+    private final int baggageWeightPerPiece;
+    private final BigDecimal extraBaggagePrice;
 
     public Fare(String fareName,
                 String cabinClass,
@@ -32,8 +33,8 @@ public class Fare {
             );
         }
 
-        this.fareName = fareName;
-        this.cabinClass = cabinClass;
+        this.fareName = Validation.requiredText(fareName, "Тариф атауы");
+        this.cabinClass = Validation.requiredText(cabinClass, "Салон класы");
         this.basePrice = basePrice;
         this.baggagePieces = baggagePieces;
         this.baggageWeightPerPiece = baggageWeightPerPiece;

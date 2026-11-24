@@ -2,14 +2,20 @@ package kz.airport;
 
 import java.math.BigDecimal;
 
+/** Бір броньның деректері және рұқсат етілген күй ауысулары. */
 public class Booking {
-    private String bookingCode;
-    private Passenger passenger;
-    private Flight flight;
-    private Fare fare;
+    public static final String CREATED = "CREATED";
+    public static final String CONFIRMED = "CONFIRMED";
+    public static final String CANCELLED = "CANCELLED";
+    public static final String CHECKED_IN = "CHECKED_IN";
+
+    private final String bookingCode;
+    private final Passenger passenger;
+    private final Flight flight;
+    private final Fare fare;
     private Seat seat;
-    private int extraBaggagePieces;
-    private BigDecimal totalPrice;
+    private final int extraBaggagePieces;
+    private final BigDecimal totalPrice;
     private String status;
 
     public Booking(String bookingCode,
@@ -43,7 +49,7 @@ public class Booking {
         this.fare = fare;
         this.extraBaggagePieces = extraBaggagePieces;
         this.totalPrice = totalPrice;
-        this.status = "CREATED";
+        this.status = CREATED;
         this.seat = null;
     }
 
@@ -80,27 +86,27 @@ public class Booking {
     }
 
     public void confirm() {
-        if (!"CREATED".equals(status)) {
+        if (!CREATED.equals(status)) {
             throw new BookingException(
                     "Тек жаңа броньның төлемін растауға болады."
             );
         }
 
-        status = "CONFIRMED";
+        status = CONFIRMED;
     }
 
     public void cancel() {
-        if (!"CREATED".equals(status)) {
+        if (!CREATED.equals(status)) {
             throw new BookingException(
                     "Тек төленбеген броннан бас тартуға болады."
             );
         }
 
-        status = "CANCELLED";
+        status = CANCELLED;
     }
 
     public void checkIn(Seat seat) {
-        if (!"CONFIRMED".equals(status)) {
+        if (!CONFIRMED.equals(status)) {
             throw new BookingException(
                     "Тіркелу үшін бронь төлемі расталған болуы керек."
             );
@@ -128,6 +134,6 @@ public class Booking {
 
         seat.occupy();
         this.seat = seat;
-        status = "CHECKED_IN";
+        status = CHECKED_IN;
     }
 }

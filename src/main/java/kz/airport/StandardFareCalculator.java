@@ -2,6 +2,7 @@ package kz.airport;
 
 import java.math.BigDecimal;
 
+/** Негізгі бағаға тек қосымша багаждың құнын қосады. */
 public class StandardFareCalculator implements FareCalculator {
 
     @Override

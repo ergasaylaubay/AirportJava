@@ -1,5 +1,6 @@
 package kz.airport;
 
+/** Бизнес салонға арналған билет; Ticket әдісін қайта анықтайды. */
 public class BusinessTicket extends Ticket {
 
     public BusinessTicket(String ticketNumber, Booking booking) {
